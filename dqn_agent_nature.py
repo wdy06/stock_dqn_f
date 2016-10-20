@@ -9,7 +9,7 @@ import copy
 import pickle
 import numpy as np
 import scipy.misc as spm
-import dnn_6
+import dnn_6_f
 
 from chainer import cuda, FunctionSet, Variable, optimizers
 import chainer.functions as F
@@ -25,7 +25,7 @@ class DQN_class:
     target_model_update_freq = 10**4  # Target update frequancy. original: 10^4
     #data_size = 10**5  # Data size of history. original: 10^6
     
-    def __init__(self, gpu_id, state_dimention,batchsize,historysize, enable_controller=[1, -1, 0]):
+    def __init__(self, gpu_id, state_dimention,batchsize,historysize, enable_controller):
         self.gpu_id = gpu_id
         self.num_of_actions = len(enable_controller)
         self.enable_controller = enable_controller  # Default setting : "Pong"
@@ -39,7 +39,7 @@ class DQN_class:
         #        cuda.init()
 
         print "Model Building"
-        self.model = dnn_6.Q_DNN(self.state_dimention,200,self.num_of_actions)
+        self.model = dnn_6_f.Q_DNN(self.state_dimention,200,self.num_of_actions)
         self.model.to_gpu(self.gpu_id)
         
         
@@ -64,7 +64,7 @@ class DQN_class:
         Q = self.model.Q_func(s,train=True)  # Get Q-value
 
         # Generate Target Signals
-        tmp = self.model_target.Q_func(s_dash,train=False)  # Q(s',*)
+        tmp = self.model_target.Q_func(s_dash,train=True)  # Q(s',*)
         tmp = list(map(np.max, tmp.data.get()))  # max_a Q(s',a)
         max_Q_dash = np.asanyarray(tmp, dtype=np.float32)
         target = np.asanyarray(Q.data.get(), dtype=np.float32)
@@ -188,13 +188,14 @@ class dqn_agent():  # RL-glue Process
     policyFrozen = False
     learning_freq = 2#何日ごとに学習するか
     
-    def __init__(self,gpu_id,state_dimention=0,batchsize=0,historysize=0,epsilon_discount_size=0):
+    def __init__(self,gpu_id,enable_controller,state_dimention=0,batchsize=0,historysize=0,epsilon_discount_size=0):
         self.gpu_id = gpu_id
+        self.enable_controller = enable_controller
         self.state_dimention = state_dimention
         self.batchsize = batchsize
         self.historysize = historysize
         self.epsilon_discount_size = epsilon_discount_size
-        
+
     def agent_init(self):
         # Some initializations for rlglue
         #self.lastAction = Action()
@@ -204,8 +205,9 @@ class dqn_agent():  # RL-glue Process
         self.epsilon = 1.0  # Initial exploratoin rate
         self.max_Q_list = []
         self.reward_list = []
+        
         # Pick a DQN from DQN_class
-        self.DQN = DQN_class(gpu_id=self.gpu_id,state_dimention=self.state_dimention,batchsize=self.batchsize,historysize=self.historysize)  # default is for "Pong".
+        self.DQN = DQN_class(gpu_id=self.gpu_id,state_dimention=self.state_dimention,batchsize=self.batchsize,historysize=self.historysize,enable_controller=self.enable_controller)  # default is for "Pong".
 
     def agent_start(self, observation):
 
@@ -263,6 +265,7 @@ class dqn_agent():  # RL-glue Process
             
         # Simple text based visualization
         #print ' Time Step %d /   ACTION  %d  /   REWARD %.4f   / EPSILON  %.6f  /   Q_max  %3f' % (self.time, action, reward, eps, np.max(Q_now.get()))
+        #print Q_now.get()
 
         # Updates for next step
         self.last_observation = observation.copy()

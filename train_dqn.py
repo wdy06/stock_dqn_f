@@ -19,19 +19,20 @@ import evaluation_performance
 parser = argparse.ArgumentParser(description='Chainer example: MNIST')
 parser.add_argument('--gpu', '-g', default=-1, type=int,
                     help='GPU ID (negative value indicates CPU)')
-parser.add_argument('--data_folder', '-f', type=str, default='./nikkei100',
+parser.add_argument('--data_folder', '-f', type=str, default='./nikkei10',
                     help='data size of history')
 parser.add_argument('--input_num', '-in', default=60, type=int,
                     help='input node number')
 parser.add_argument('--channel', '-c', default=8, type=int,
                     help='data channel')
 parser.add_argument('--experiment_name', '-n', default='experiment',type=str,help='experiment name')
-parser.add_argument('--batchsize', '-B', type=int, default=100,
+parser.add_argument('--batchsize', '-B', type=int, default=1000,
                     help='replay size')
 parser.add_argument('--historysize', '-D', type=int, default=10**5,
                     help='data size of history')
 parser.add_argument('--epsilon_discount_size', '-eds', type=int, default=10**6,
                     help='data size of history')
+parser.add_argument('--action_split_number', '-asn', type=int, default=2,help='how many split action')
 parser.add_argument('--u_vol', '-vol',type=int,default=1,
                     help='use vol or no')
 parser.add_argument('--u_ema', '-ema',type=int,default=1,
@@ -78,16 +79,21 @@ else:
 
 END_TRAIN_DAY = 20081230
 START_TEST_DAY = 20090105
-n_epoch = 1000
+n_epoch = 2000
+agent_state = 4
+#コントローラの設定
+enable_controller = range( - args.action_split_number,args.action_split_number + 1)
+print 'enable_controller:',enable_controller
 
 start_time = time.clock()
 
-Agent = dqn_agent_nature.dqn_agent(gpu_id=args.gpu,state_dimention=args.input_num * args.channel + 2,batchsize=args.batchsize,historysize=args.historysize,epsilon_discount_size=args.epsilon_discount_size)
+Agent = dqn_agent_nature.dqn_agent(gpu_id=args.gpu,enable_controller = enable_controller,state_dimention=args.input_num * args.channel + agent_state,batchsize=args.batchsize,historysize=args.historysize,epsilon_discount_size=args.epsilon_discount_size)
+
 Agent.agent_init()
 
 market = env_stockmarket.StockMarket(END_TRAIN_DAY,START_TEST_DAY,u_vol=u_vol,u_ema=u_ema,u_rsi=u_rsi,u_macd=u_macd,u_stoch=u_stoch,u_wil=u_wil)
 
-evaluater = evaluation_performance.Evaluation(args.gpu,market,args.data_folder,folder,args.input_num)
+evaluater = evaluation_performance.Evaluation(args.gpu,market,args.data_folder,folder,args.input_num,args.action_split_number)
 
 
 
@@ -103,6 +109,7 @@ with open(folder + 'settings.txt', 'wb') as o:
     o.write('batchsize:' + str(args.batchsize) + '\n')
     o.write('historysize:' + str(args.historysize) + '\n')
     o.write('epsilon_discount_size:' + str(args.epsilon_discount_size) + '\n')
+    o.write('action_split_number:' + str(args.action_split_number) + '\n')
     
     
 files = os.listdir(args.data_folder)
@@ -117,7 +124,7 @@ for epoch in tqdm(range(1,n_epoch + 1)):
     Agent.policyFrozen = False
     for f in tqdm(files):
 
-        stock_agent = env_stockmarket.Stock_agent(Agent)
+        stock_agent = env_stockmarket.Stock_agent(Agent,args.action_split_number)
         
         try:
             traindata,trainprice = market.get_trainData(f,args.input_num)

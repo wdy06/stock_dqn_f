@@ -15,7 +15,7 @@ import tools
     
 class Stock_agent():
     
-    def __init__(self,agent):
+    def __init__(self,agent,action_split_number):
     
         #agent = dqn_agent_nature.dqn_agent()
         self.Agent = agent
@@ -25,6 +25,12 @@ class Stock_agent():
         self.money = 1000000
         self.property =0
         self.buyprice = 0
+        self.ave_buyprice = 0.0#平均取得単価
+        self.sell_ratio = 0.0#売却時に何割の株を売ったか
+        self.money_ratio = 1.0#総資産に対する現金の割合
+        self.stock_ratio = 0.0#総資産に対する株式の割合
+        
+        self.action_split_number = action_split_number
         
     def observe_norm(self,env):
         '''
@@ -65,6 +71,16 @@ class Stock_agent():
             
             return float(nowprice - buyprice) / buyprice
         
+    def get_reward_aveprice(self, last_action, nowprice, ave_buyprice,sell_ratio):
+        if (last_action == 0) or (last_action == 1):
+            return 0
+            
+        if ave_buyprice == 0:
+            return 0
+        
+        elif last_action == -1:
+            return float(nowprice - ave_buyprice)*sell_ratio / ave_buyprice
+        
     def get_prospect_profit(self,havestock, nowprice, buyprice):
         #株を持っている場合の見込み利益を返す
         if havestock == 0:
@@ -99,64 +115,83 @@ class Stock_agent():
             self.observe_norm(observation)
             
             prospect_profit = self.get_prospect_profit(self.havestock,price[i],self.buyprice)
-            agent_status = np.array([self.havestock,prospect_profit])
+            agent_status = np.array([self.havestock,prospect_profit,self.money_ratio,self.stock_ratio])
             observation = observation.reshape(1,-1)#一次元配列に変形
             observation = np.array([np.r_[observation[0], agent_status]])
             #print observation
-            reward = self.get_reward(self.action, price[i-1], self.buyprice)
-            
+            reward = self.get_reward_aveprice(self.action, price[i-1], self.ave_buyprice,self.sell_ratio)
+            #print self.ave_buyprice
             if i == (term - 1):
                 #print 'agent start!'
                 Q_action = self.Agent.agent_start(observation)
             elif i == (len(price) - 1):
                 #print 'agent end!'
                 Q_action = self.Agent.agent_end(reward)
+                Q_action = 0
             else:
+                #print 'agent step'
                 Q_action = self.Agent.agent_step(reward, observation)
                 
             
-            if Q_action == 1:#buy_pointのとき
-                s = self.calcstocks(self.money, price[i])#現在の所持金で買える株数を計算
+            if Q_action > 0:#buy_pointのとき
+                buy_ratio = float(Q_action) / self.action_split_number
+                s = self.calcstocks(self.money * buy_ratio, price[i])#現在の所持金で買える株数を計算
                 
-                if s > 0:#現在の所持金で株が買えるなら
+                #現在の所持金で株が買える
+                if (s > 0):
                     self.havestock = 1
                     self.action = 1
-                    #order.append(1)#買う
+                    if self.stock == 0:
+                        #ave_buypriceをリセット
+                        self.ave_buyprice = 0
+                        
+                    #ave_buypriceを計算
+                    self.ave_buyprice = (self.ave_buyprice * self.stock + price[i] * s) / (self.stock + s)
                     self.stock += s
                     self.buyprice = price[i]
                     self.money = self.money - s * self.buyprice
                 else:
-                    #order.append(0)#買わない
+                    
                     self.action = 0
                     
-            elif Q_action == -1:#sell_pointのとき
+            elif Q_action < 0:#sell_pointのとき
                 if self.havestock == 1:#株を持っているなら
                     self.action = -1
-                    #order.append(-1)#売る
-                    self.money = self.money + self.stock * price[i]
-                    self.stock = 0
-                    self.havestock = 0
+                    
+                    self.sell_ratio = float(abs(Q_action)) / self.action_split_number
+                    sell_stocks = int(self.stock / self.sell_ratio)
+                    if sell_stocks > self.stock:
+                        sell_stocks = self.stock
+                        self.sell_ratio = 1.0
+                        
+                    self.money = self.money + sell_stocks * price[i]
+                    self.stock = self.stock - sell_stocks
+                    
+                    
+                    if self.stock == 0:
+                        self.havestock = 0
+
                     #self.buyprice = 0
                 else:#株を持っていないなら
-                    #order.append(0)#何もしない
+                    
                     self.action = 0
                     
                     
             else:#no_operationのとき
-                #order.append(0)
+                
                 self.action = 0
                 
-                
+            #print self.action
             self.property = self.stock * price[i] + self.money
-            #proper.append(self.property)
-            #stocks.append(self.stock)
+            self.money_ratio = float(self.money) / self.property
+            self.stock_ratio = float(self.stock)*price[i] / self.property
             end_p = self.property#最終総資産
             
         profit_ratio = float((end_p - start_p) / start_p) * 100
         
         return profit_ratio
 
-    def trading_test(self,term, price, traindata):
+    def trading_test(self,term, price, testdata):
         #trading()の総資産推移や売買履歴を出力版
         start_p = self.money
         end_p = 0
@@ -168,16 +203,17 @@ class Stock_agent():
         stocks = []
         price_data = []
         for i in xrange(term - 1,len(price)):
-
-            observation = copy.deepcopy(traindata[:,i-term+1:i+1])
-            
+            #print i,i-term
+            observation = copy.deepcopy(testdata[:,i-term+1:i+1])
+            #直近の期間で正規化
             self.observe_norm(observation)
             
             prospect_profit = self.get_prospect_profit(self.havestock,price[i],self.buyprice)
-            agent_status = np.array([self.havestock,prospect_profit])
+            agent_status = np.array([self.havestock,prospect_profit,self.money_ratio,self.stock_ratio])
             observation = observation.reshape(1,-1)#一次元配列に変形
             observation = np.array([np.r_[observation[0], agent_status]])
-            reward = self.get_reward(self.action, price[i-1], self.buyprice)
+            #print observation
+            reward = self.get_reward_aveprice(self.action, price[i-1], self.ave_buyprice,self.sell_ratio)
             
             if i == (term - 1):
                 #print 'agent start!'
@@ -190,41 +226,57 @@ class Stock_agent():
                 
             price_data.append(price[i])
             
-            if Q_action == 1:#buy_pointのとき
-                s = self.calcstocks(self.money, price[i])#現在の所持金で買える株数を計算
+            if Q_action > 0:#buy_pointのとき
+                buy_ratio = float(Q_action) / self.action_split_number
+                s = self.calcstocks(self.money * buy_ratio, price[i])#現在の所持金で買える株数を計算
                 
-                if s > 0:#現在の所持金で株が買えるなら
+                #現在の所持金で株が買える
+                if (s > 0):
                     self.havestock = 1
                     self.action = 1
-                    order.append(1)#買う
+                    order.append(1)
+                    #ave_buypriceを計算
+                    self.ave_buyprice = (ave_buyprice * self.stock + price[i] * s) / self.stock + s
                     self.stock += s
                     self.buyprice = price[i]
                     self.money = self.money - s * self.buyprice
                 else:
-                    order.append(0)#買わない
+                    order.append(0)
                     self.action = 0
                     
-            elif Q_action == -1:#sell_pointのとき
+            elif Q_action < 0:#sell_pointのとき
                 if self.havestock == 1:#株を持っているなら
                     self.action = -1
-                    order.append(-1)#売る
-                    self.money = self.money + self.stock * price[i]
-                    self.stock = 0
-                    self.havestock = 0
+                    order.append(-1)
+                    self.sell_ratio = float(abs(Q_action)) / self.action_split_number
+                    sell_stocks = int(self.stock / self.sell_ratio)
+                    if sell_stocks > self.stock:
+                        sell_stocks = self.stock
+                        self.sell_ratio = 1.0
+                        
+                    self.money = self.money + sell_stocks * price[i]
+                    self.stock = self.stock - sell_stocks
+                    
+                    
+                    if self.stock == 0:
+                        self.havestock = 0
+                        self.ave_buyprice = 0
                     #self.buyprice = 0
                 else:#株を持っていないなら
-                    order.append(0)#何もしない
+                    order.append(0)
                     self.action = 0
                     
                     
             else:#no_operationのとき
-                order.append(0)
+                
                 self.action = 0
                 
                 
             self.property = self.stock * price[i] + self.money
             proper.append(self.property)
             stocks.append(self.stock)
+            self.money_ratio = float(self.money) / self.property
+            self.stock_ratio = float(self.stock)*price[i] / self.property
             end_p = self.property#最終総資産
             
         profit_ratio = float((end_p - start_p) / start_p) * 100

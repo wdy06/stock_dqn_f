@@ -11,8 +11,7 @@ class Q_DNN(chainer.Chain):
     
     modelname = 'dnn6'
     layer_num = 6
-    #input_num = 60
-    #hidden_num = 100
+
     
     def __init__(self, input_num, hidden_num,num_of_actions):
         self.input_num = input_num
@@ -28,9 +27,7 @@ class Q_DNN(chainer.Chain):
             q_value=L.Linear(self.hidden_num, self.num_of_actions,
                              initialW=np.zeros((self.num_of_actions, self.hidden_num),
                                                dtype=np.float32))
-            f_value=L.Linear(self.hidden_num, 1,
-                             initialW=np.zeros((1, self.hidden_num),
-                                               dtype=np.float32))
+            
         )
         
     def Q_func(self, state, train=True):
@@ -42,9 +39,9 @@ class Q_DNN(chainer.Chain):
         h = F.dropout(F.tanh(self.fc4(h)), train=train)
         h = F.dropout(F.tanh(self.fc5(h)), train=train)
         Q = self.q_value(h)
-        f = F.sigmoid(self.f_value(h))
         
-        return Q, f
+        
+        return Q
         
     
 
