@@ -21,9 +21,10 @@ parser.add_argument('--gpu', '-g', default=-1, type=int,
 parser.add_argument('model',help='path of using agent')
 parser.add_argument('--input_num', '-in', default=60, type=int,
                     help='input node number')
-parser.add_argument('--channel', '-c', default=1, type=int,
+parser.add_argument('--channel', '-c', default=8, type=int,
                     help='data channel')
 parser.add_argument('--experiment_name', '-n', default='experiment',type=str,help='experiment name')
+parser.add_argument('--action_split_number', '-asn', type=int, default=2,help='how many split action')
 parser.add_argument('--u_vol', '-vol',type=int,default=1,
                     help='use vol or no')
 parser.add_argument('--u_ema', '-ema',type=int,default=1,
@@ -65,14 +66,17 @@ if os.path.isdir(folder) == True:
 else:
     print 'make experiment folder'
     os.makedirs(folder)
-    
+
+#コントローラの設定
+enable_controller = range( - args.action_split_number,args.action_split_number + 1)
+print 'enable_controller:',enable_controller
     
 END_TRAIN_DAY = 20081230
 #START_TEST_DAY = 20090105
 START_TEST_DAY = 20100104
 
 #モデルの読み込み
-Agent = dqn_agent_nature.dqn_agent()
+Agent = dqn_agent_nature.dqn_agent(gpu_id = args.gpu,state_dimention=1,enable_controller=enable_controller)
 Agent.agent_init()
 Agent.DQN.load_model(args.model)
 Agent.policyFrozen = True
@@ -88,7 +92,7 @@ profit_list = []
 
 for f in files:
     print f
-    stock_agent = env_stockmarket.Stock_agent(Agent)
+    stock_agent = env_stockmarket.Stock_agent(Agent,args.action_split_number)
     
     try:
         testdata,testprice = market.get_testData(f,args.input_num)
@@ -97,15 +101,16 @@ for f in files:
         print 'skip',f
         continue
         
-    profit_ratio, proper, order, stocks, price = stock_agent.trading_test(args.input_num,testprice,testdata)
+    profit_ratio, proper, order, stocks, price, Q_list = stock_agent.trading_test(args.input_num,testprice,testdata)
     profit_list.append(profit_ratio)
     
-
+    
     tools.listToCsv(folder+str(f).replace(".CSV", "")+'.csv', price, proper, order,stocks)
     
     buy_order, sell_order = tools.order2buysell(order,price)
 
     #2軸使用
+    
     fig, axis1 = plt.subplots()
     axis2 = axis1.twinx()
     axis1.set_ylabel('price')
@@ -113,12 +118,24 @@ for f in files:
     axis1.set_ylabel('sell')
     axis2.set_ylabel('property')
     axis1.plot(price, label = "price")
-    axis1.plot(buy_order,'o',label='buy')
-    axis1.plot(sell_order,'^',label='sell')
+    axis1.plot(buy_order,'o',label='buy point')
+    axis1.plot(sell_order,'^',label='sell point')
     axis1.legend(loc = 'upper left')
     axis2.plot(proper, label = 'property', color = 'g')
     axis2.legend()
     filename = folder + str(f).replace(".CSV", "") + ".png"
+    plt.savefig(filename)
+    plt.close()
+    
+    plt.subplot(2, 1, 1)
+    plt.plot(stocks,label='stocks')
+    
+    plt.subplot(2, 1, 2)
+    Q_list = np.array(Q_list)
+    for i in range(len(Q_list[0])):
+        plt.plot(Q_list[:,i],label=str(enable_controller[i]))
+        
+    filename = folder + str(f).replace(".CSV", "") + "_sub.png"
     plt.savefig(filename)
     plt.close()
     
