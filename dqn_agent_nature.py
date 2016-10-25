@@ -205,6 +205,7 @@ class dqn_agent():  # RL-glue Process
         self.epsilon = 1.0  # Initial exploratoin rate
         self.max_Q_list = []
         self.reward_list = []
+        self.Q_recent = 0
         
         # Pick a DQN from DQN_class
         self.DQN = DQN_class(gpu_id=self.gpu_id,state_dimention=self.state_dimention,batchsize=self.batchsize,historysize=self.historysize,enable_controller=self.enable_controller)  # default is for "Pong".
@@ -218,12 +219,12 @@ class dqn_agent():  # RL-glue Process
 
         # Generate an Action e-greedy
         action, Q_now = self.DQN.e_greedy(state_, self.epsilon)
-
+        self.Q_recent = Q_now.get()[0]
         # Update for next step
         self.lastAction = action
         self.last_state = self.state.copy()
         self.last_observation = observation.copy()
-        self.max_Q_list.append(np.max(Q_now.get()))
+        self.max_Q_list.append(np.max(self.Q_recent))
         
         return action
         
@@ -248,7 +249,9 @@ class dqn_agent():  # RL-glue Process
                 eps = 0.05
         # Generate an Action by e-greedy action selection
         action, Q_now = self.DQN.e_greedy(state_, eps)
-        self.max_Q_list.append(np.max(Q_now.get()))
+        self.Q_recent = Q_now.get()[0]
+
+        self.max_Q_list.append(np.max(self.Q_recent))
         self.reward_list.append(reward)
 
         # Learning Phase

@@ -202,6 +202,8 @@ class Stock_agent():
         order = []
         stocks = []
         price_data = []
+        Q_list = []
+        
         for i in xrange(term - 1,len(price)):
             #print i,i-term
             observation = copy.deepcopy(testdata[:,i-term+1:i+1])
@@ -214,17 +216,21 @@ class Stock_agent():
             observation = np.array([np.r_[observation[0], agent_status]])
             #print observation
             reward = self.get_reward_aveprice(self.action, price[i-1], self.ave_buyprice,self.sell_ratio)
-            
+            #print self.ave_buyprice
             if i == (term - 1):
                 #print 'agent start!'
                 Q_action = self.Agent.agent_start(observation)
             elif i == (len(price) - 1):
                 #print 'agent end!'
                 Q_action = self.Agent.agent_end(reward)
+                Q_action = 0
             else:
+                #print 'agent step'
                 Q_action = self.Agent.agent_step(reward, observation)
                 
             price_data.append(price[i])
+            
+            Q_list.append(self.Agent.Q_recent.tolist())
             
             if Q_action > 0:#buy_pointのとき
                 buy_ratio = float(Q_action) / self.action_split_number
@@ -235,8 +241,12 @@ class Stock_agent():
                     self.havestock = 1
                     self.action = 1
                     order.append(1)
+                    if self.stock == 0:
+                        #ave_buypriceをリセット
+                        self.ave_buyprice = 0
+                        
                     #ave_buypriceを計算
-                    self.ave_buyprice = (ave_buyprice * self.stock + price[i] * s) / self.stock + s
+                    self.ave_buyprice = (self.ave_buyprice * self.stock + price[i] * s) / (self.stock + s)
                     self.stock += s
                     self.buyprice = price[i]
                     self.money = self.money - s * self.buyprice
@@ -260,7 +270,7 @@ class Stock_agent():
                     
                     if self.stock == 0:
                         self.havestock = 0
-                        self.ave_buyprice = 0
+
                     #self.buyprice = 0
                 else:#株を持っていないなら
                     order.append(0)
@@ -270,8 +280,8 @@ class Stock_agent():
             else:#no_operationのとき
                 
                 self.action = 0
-                
-                
+                order.append(0)
+            #print self.action
             self.property = self.stock * price[i] + self.money
             proper.append(self.property)
             stocks.append(self.stock)
@@ -281,7 +291,7 @@ class Stock_agent():
             
         profit_ratio = float((end_p - start_p) / start_p) * 100
         
-        return profit_ratio, proper, order, stocks, price_data
+        return profit_ratio, proper, order, stocks, price_data, Q_list
         
 class StockMarket():
     
