@@ -6,6 +6,8 @@ import argparse
 import pickle
 import env_stockmarket
 import dqn_agent_nature
+import dqn_agent_without_ER
+import copy
 import tools
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,6 +27,7 @@ parser.add_argument('--channel', '-c', default=8, type=int,
                     help='data channel')
 parser.add_argument('--experiment_name', '-n', default='experiment',type=str,help='experiment name')
 parser.add_argument('--action_split_number', '-asn', type=int, default=2,help='how many split action')
+parser.add_argument('--online_update', '-ou', type=int, default=0,help='not use online update:0,use online update:1')
 parser.add_argument('--u_vol', '-vol',type=int,default=1,
                     help='use vol or no')
 parser.add_argument('--u_ema', '-ema',type=int,default=1,
@@ -75,11 +78,26 @@ END_TRAIN_DAY = 20081230
 #START_TEST_DAY = 20090105
 START_TEST_DAY = 20100104
 
+
+org_model = 0
 #モデルの読み込み
-Agent = dqn_agent_nature.dqn_agent(gpu_id = args.gpu,state_dimention=1,enable_controller=enable_controller)
-Agent.agent_init()
-Agent.DQN.load_model(args.model)
-Agent.policyFrozen = True
+#not use online update
+if args.online_update == 0:
+    Agent = dqn_agent_nature.dqn_agent(gpu_id = args.gpu,state_dimention=1,enable_controller=enable_controller)
+    Agent.agent_init()
+    Agent.DQN.load_model(args.model)
+    Agent.policyFrozen = True
+
+#use online update
+elif args.online_update == 1:
+    Agent = dqn_agent_without_ER.dqn_agent(state_dimention=1,enable_controller=enable_controller)
+    Agent.agent_init()
+    #オリジナルを改変しないようにコピー
+    with open(args.model, 'rb') as m:
+        print "open " + args.model
+        org_model = pickle.load(m)
+    Agent.DQN.model = copy.deepcopy(org_model)
+    Agent.policyFrozen = False
     
 market = env_stockmarket.StockMarket(END_TRAIN_DAY,START_TEST_DAY,u_vol=u_vol,u_ema=u_ema,u_rsi=u_rsi,u_macd=u_macd,u_stoch=u_stoch,u_wil=u_wil)
 
@@ -92,6 +110,12 @@ profit_list = []
 
 for f in files:
     print f
+    if args.online_update == 1:
+        #銘柄ごとに初期化
+        Agent.DQN.model = copy.deepcopy(org_model)
+        Agent.DQN.model_target = copy.deepcopy(org_model)
+        Agent.DQN.reset_optimizer()
+        
     stock_agent = env_stockmarket.Stock_agent(Agent,args.action_split_number)
     
     try:
