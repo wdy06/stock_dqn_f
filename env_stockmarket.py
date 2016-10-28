@@ -114,7 +114,7 @@ class Stock_agent():
             #直近の期間で正規化
             self.observe_norm(observation)
             
-            prospect_profit = self.get_prospect_profit(self.havestock,price[i],self.buyprice)
+            prospect_profit = self.get_prospect_profit(self.havestock,price[i],self.ave_buyprice)
             agent_status = np.array([self.havestock,prospect_profit,self.money_ratio,self.stock_ratio])
             observation = observation.reshape(1,-1)#一次元配列に変形
             observation = np.array([np.r_[observation[0], agent_status]])
