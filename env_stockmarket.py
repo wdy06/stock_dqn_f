@@ -202,6 +202,8 @@ class Stock_agent():
         order = []
         stocks = []
         price_data = []
+        ave_buyprice_list = []
+        reward_list = []
         Q_list = []
         
         for i in xrange(term - 1,len(price)):
@@ -285,13 +287,15 @@ class Stock_agent():
             self.property = self.stock * price[i] + self.money
             proper.append(self.property)
             stocks.append(self.stock)
+            ave_buyprice_list.append(self.ave_buyprice)
+            reward_list.append(reward)
             self.money_ratio = float(self.money) / self.property
             self.stock_ratio = float(self.stock)*price[i] / self.property
             end_p = self.property#最終総資産
             
         profit_ratio = float((end_p - start_p) / start_p) * 100
         
-        return profit_ratio, proper, order, stocks, price_data, Q_list
+        return profit_ratio, proper, order, stocks, price_data, Q_list, ave_buyprice_list,reward_list
         
 class StockMarket():
     

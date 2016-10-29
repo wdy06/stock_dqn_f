@@ -125,11 +125,11 @@ for f in files:
         print 'skip',f
         continue
         
-    profit_ratio, proper, order, stocks, price, Q_list = stock_agent.trading_test(args.input_num,testprice,testdata)
+    profit_ratio, proper, order, stocks, price, Q_list, ave_buyprice_list ,reward_list= stock_agent.trading_test(args.input_num,testprice,testdata)
     profit_list.append(profit_ratio)
     
     
-    tools.listToCsv(folder+str(f).replace(".CSV", "")+'.csv', price, proper, order,stocks)
+    tools.listToCsv(folder+str(f).replace(".CSV", "")+'.csv', price, proper, order,stocks,ave_buyprice_list,reward_list)
     
     buy_order, sell_order = tools.order2buysell(order,price)
 
