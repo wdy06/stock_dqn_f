@@ -71,9 +71,9 @@ class DQN_class:
 
         for i in xrange(num_of_batch):
             if not episode_end[i][0]:
-                tmp_ = np.sign(Reward[i]) + self.gamma * max_Q_dash[i]
+                tmp_ = Reward[i] + self.gamma * max_Q_dash[i]
             else:
-                tmp_ = np.sign(Reward[i])
+                tmp_ = Reward[i]
             #print action
             action_index = self.action_to_index(action[i])
             target[i, action_index] = tmp_
@@ -135,6 +135,7 @@ class DQN_class:
             loss, _ = self.forward(s_replay, a_replay, r_replay, s_dash_replay, episode_end_replay)
             loss.backward()
             self.optimizer.update()
+
     
         
     
