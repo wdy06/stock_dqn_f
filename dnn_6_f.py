@@ -30,17 +30,16 @@ class Q_DNN(chainer.Chain):
             
         )
         
-    def Q_func(self, state, train=True):
+    def Q_func(self, state):
         
         
-        h = F.dropout(F.tanh(self.fc1(state)), train=train)
-        h = F.dropout(F.tanh(self.fc2(h)), train=train)  
-        h = F.dropout(F.tanh(self.fc3(h)), train=train)
-        h = F.dropout(F.tanh(self.fc4(h)), train=train)
-        h = F.dropout(F.tanh(self.fc5(h)), train=train)
+        h = F.tanh(self.fc1(state))
+        h = F.tanh(self.fc2(h))  
+        h = F.tanh(self.fc3(h))
+        h = F.tanh(self.fc4(h))
+        h = F.tanh(self.fc5(h))
         Q = self.q_value(h)
-        
-        
+
         return Q
         
     
