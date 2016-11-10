@@ -55,9 +55,9 @@ class DQN_class:
 
         for i in xrange(num_of_batch):
             if not episode_end:
-                tmp_ = np.sign(Reward) + self.gamma * max_Q_dash[i]
+                tmp_ = Reward + self.gamma * max_Q_dash[i]
             else:
-                tmp_ = np.sign(Reward)
+                tmp_ = Reward
             #print action
             action_index = self.action_to_index(action)
             target[i, action_index] = tmp_
