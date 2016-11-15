@@ -75,8 +75,8 @@ enable_controller = range( - args.action_split_number,args.action_split_number +
 print 'enable_controller:',enable_controller
     
 END_TRAIN_DAY = 20081230
-#START_TEST_DAY = 20090105
-START_TEST_DAY = 20100104
+START_TEST_DAY = 20090105
+#START_TEST_DAY = 20100104
 
 
 org_model = 0
@@ -153,12 +153,13 @@ for f in files:
     
     plt.subplot(2, 1, 1)
     plt.plot(stocks,label='stocks')
-    
+    plt.legend()
     plt.subplot(2, 1, 2)
     Q_list = np.array(Q_list)
     for i in range(len(Q_list[0])):
         plt.plot(Q_list[:,i],label=str(enable_controller[i]))
         
+    plt.legend()
     filename = folder + str(f).replace(".CSV", "") + "_sub.png"
     plt.savefig(filename)
     plt.close()

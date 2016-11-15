@@ -44,6 +44,7 @@ class Evaluation():
         files = os.listdir(self.target_folder)
         
         #train term evaluation
+        print 'start evaluation train term...'
         for f in files:
             
             stock_agent = env_stockmarket.Stock_agent(Agent,self.action_split_number)
@@ -60,6 +61,7 @@ class Evaluation():
         train_ave_reward = Agent.get_average_reward()
         
         #test term evaluation
+        print 'start evaluation test term...'
         for f in files:
             
             stock_agent = env_stockmarket.Stock_agent(Agent,self.action_split_number)
@@ -78,7 +80,7 @@ class Evaluation():
         self.test_ave_profit_list.append(test_ave)
         self.ave_Q_list.append(train_ave_Q)
         self.ave_reward_list.append(train_ave_reward)
-        
+        print 'finish evaluation'
         return train_ave, test_ave, train_ave_Q, train_ave_reward
         
     def save_eval_result(self):
@@ -144,6 +146,7 @@ class Evaluation():
         filename = self.result_folder + "log_ave_test_profit.png"
         plt.savefig(filename)
         plt.close()
+        print 'save result'
         
     def get_epsilon(self, epsilon):
         self.epsilon_list.append(epsilon)
