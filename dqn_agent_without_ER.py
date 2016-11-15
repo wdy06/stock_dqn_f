@@ -7,7 +7,7 @@ import pickle
 import numpy as np
 import scipy.misc as spm
 import dnn_6_f
-
+import dnn_6_BN
 from chainer import cuda, FunctionSet, Variable, optimizers
 import chainer.functions as F
 
@@ -30,7 +30,7 @@ class DQN_class:
         self.state_dimention = state_dimention
         print "Initializing DQN..."
         print "Model Building"
-        self.model = dnn_6_f.Q_DNN(self.state_dimention,200,self.num_of_actions)
+        self.model = dnn_6_BN.Q_DNN(self.state_dimention,200,self.num_of_actions)
         #self.model.to_gpu()
         
         
@@ -45,10 +45,10 @@ class DQN_class:
         s = Variable(state)
         s_dash = Variable(state_dash)
 
-        Q = self.model.Q_func(s)  # Get Q-value
+        Q = self.model.Q_func(s,train=True)  # Get Q-value
 
         # Generate Target Signals
-        tmp = self.model_target.Q_func(s_dash)  # Q(s',*)
+        tmp = self.model_target.Q_func(s_dash,train=True)  # Q(s',*)
         tmp = list(map(np.max, tmp.data))  # max_a Q(s',a)
         max_Q_dash = np.asanyarray(tmp, dtype=np.float32)
         target = np.asanyarray(Q.data, dtype=np.float32)
@@ -84,7 +84,7 @@ class DQN_class:
     def e_greedy(self, state, epsilon):
         
         s = Variable(state)
-        Q = self.model.Q_func(s)
+        Q = self.model.Q_func(s,train=False)
         Q = Q.data
 
         if np.random.rand() < epsilon:
