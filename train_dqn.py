@@ -68,6 +68,7 @@ if args.gpu >= 0:
     print "use gpu"
 
 folder = './train_result/' + args.experiment_name + '/'
+eval_folder = './nikkei100/'
 if os.path.isdir(folder) == True:
     print 'this experiment name is existed'
     print 'please change experiment name'
@@ -76,7 +77,7 @@ else:
     print 'make experiment folder'
     os.makedirs(folder)
 
-
+evaluation_freq = 100000
 END_TRAIN_DAY = 20081230
 START_TEST_DAY = 20090105
 n_epoch = 2000
@@ -93,7 +94,7 @@ Agent.agent_init()
 
 market = env_stockmarket.StockMarket(END_TRAIN_DAY,START_TEST_DAY,u_vol=u_vol,u_ema=u_ema,u_rsi=u_rsi,u_macd=u_macd,u_stoch=u_stoch,u_wil=u_wil)
 
-evaluater = evaluation_performance.Evaluation(args.gpu,market,args.data_folder,folder,args.input_num,args.action_split_number)
+evaluater = evaluation_performance.Evaluation(args.gpu,market,eval_folder,folder,args.input_num,args.action_split_number)
 
 
 
@@ -116,7 +117,7 @@ files = os.listdir(args.data_folder)
 for epoch in tqdm(range(1,n_epoch + 1)):
     Agent.init_max_Q_list()
     Agent.init_reward_list()
-
+    print 'learned time step:',Agent.learned_time
 
     #ファイルの順をシャッフル
     random.shuffle(files)
@@ -131,9 +132,10 @@ for epoch in tqdm(range(1,n_epoch + 1)):
         except:
             continue
             
-        profit_ratio = stock_agent.trading(args.input_num,trainprice,traindata)
+        profit_ratio = stock_agent.trading_evaluation(args.input_num,trainprice,traindata,evaluation_freq,evaluater)
 
     #model evaluation
+    '''
     eval_model = Agent.DQN.get_model_copy()
     evaluater.eval_performance(eval_model)
     evaluater.get_epsilon(Agent.epsilon)
@@ -142,3 +144,4 @@ for epoch in tqdm(range(1,n_epoch + 1)):
     if epoch % 1 == 0:
         
         Agent.DQN.save_model(folder,epoch)
+    '''

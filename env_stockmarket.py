@@ -296,6 +296,108 @@ class Stock_agent():
         profit_ratio = float((end_p - start_p) / start_p) * 100
         
         return profit_ratio, proper, order, stocks, price_data, Q_list, ave_buyprice_list,reward_list
+    
+    def trading_evaluation(self,term, price, traindata, evaluation_freq, evaluater):
+        
+        #trading()の売買中に評価する版
+        start_p = self.money
+        end_p = 0
+        if price == -1:
+            return 'error'
+            
+        for i in xrange(term - 1,len(price)):
+            #print i,i-term
+            observation = copy.deepcopy(traindata[:,i-term+1:i+1])
+            #直近の期間で正規化
+            self.observe_norm(observation)
+            
+            prospect_profit = self.get_prospect_profit(self.havestock,price[i],self.ave_buyprice)
+            agent_status = np.array([self.havestock,prospect_profit,self.money_ratio,self.stock_ratio])
+            observation = observation.reshape(1,-1)#一次元配列に変形
+            observation = np.array([np.r_[observation[0], agent_status]])
+            #print observation
+            reward = self.get_reward_aveprice(self.action, price[i-1], self.ave_buyprice,self.sell_ratio)
+            #print self.ave_buyprice
+            if i == (term - 1):
+                #print 'agent start!'
+                Q_action = self.Agent.agent_start(observation)
+            elif i == (len(price) - 1):
+                #print 'agent end!'
+                Q_action = self.Agent.agent_end(reward)
+                Q_action = 0
+            else:
+                #print 'agent step'
+                Q_action = self.Agent.agent_step(reward, observation)
+                
+            
+            if Q_action > 0:#buy_pointのとき
+                buy_ratio = float(Q_action) / self.action_split_number
+                s = self.calcstocks(self.money * buy_ratio, price[i])#現在の所持金で買える株数を計算
+                
+                #現在の所持金で株が買える
+                if (s > 0):
+                    self.havestock = 1
+                    self.action = 1
+                    if self.stock == 0:
+                        #ave_buypriceをリセット
+                        self.ave_buyprice = 0
+                        
+                    #ave_buypriceを計算
+                    self.ave_buyprice = (self.ave_buyprice * self.stock + price[i] * s) / (self.stock + s)
+                    self.stock += s
+                    self.buyprice = price[i]
+                    self.money = self.money - s * self.buyprice
+                else:
+                    
+                    self.action = 0
+                    
+            elif Q_action < 0:#sell_pointのとき
+                if self.havestock == 1:#株を持っているなら
+                    self.action = -1
+                    
+                    self.sell_ratio = float(abs(Q_action)) / self.action_split_number
+                    sell_stocks = int(self.stock / self.sell_ratio)
+                    if sell_stocks > self.stock:
+                        sell_stocks = self.stock
+                        self.sell_ratio = 1.0
+                        
+                    self.money = self.money + sell_stocks * price[i]
+                    self.stock = self.stock - sell_stocks
+                    
+                    
+                    if self.stock == 0:
+                        self.havestock = 0
+
+                    #self.buyprice = 0
+                else:#株を持っていないなら
+                    
+                    self.action = 0
+                    
+                    
+            else:#no_operationのとき
+                
+                self.action = 0
+                
+            #print self.action
+            self.property = self.stock * price[i] + self.money
+            self.money_ratio = float(self.money) / self.property
+            self.stock_ratio = float(self.stock)*price[i] / self.property
+            end_p = self.property#最終総資産
+            
+            #evaluation Phase
+            if (self.Agent.time % evaluation_freq) == 0 and (self.Agent.time != 0):
+                print 'time step:',self.Agent.time
+                eval_model = self.Agent.DQN.get_model_copy()
+                evaluater.eval_performance(eval_model)
+                evaluater.get_epsilon(self.Agent.epsilon)
+                evaluater.save_eval_result()
+                self.Agent.DQN.save_model(evaluater.result_folder,self.Agent.time)
+                
+                
+        profit_ratio = float((end_p - start_p) / start_p) * 100
+        
+        return profit_ratio
+        
         
 class StockMarket():
     
