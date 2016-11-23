@@ -6,6 +6,7 @@ import chainer
 import chainer.functions as F
 import chainer.links as L
 import numpy as np
+from chainer import Variable
 
 class Q_DNN(chainer.Chain):
     
@@ -32,7 +33,7 @@ class Q_DNN(chainer.Chain):
         
     def Q_func(self, state):
         
-        
+        s = Variable(state)
         h = F.tanh(self.fc1(state))
         h = F.tanh(self.fc2(h))  
         h = F.tanh(self.fc3(h))

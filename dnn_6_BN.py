@@ -6,6 +6,7 @@ import chainer
 import chainer.functions as F
 import chainer.links as L
 import numpy as np
+from chainer import Variable
 
 class Q_DNN(chainer.Chain):
     
@@ -39,7 +40,8 @@ class Q_DNN(chainer.Chain):
         
         test = not train
         
-        h = F.tanh(self.bn1(self.fc1(state),test=test))
+        s = Variable(state)
+        h = F.tanh(self.bn1(self.fc1(s),test=test))
         h = F.tanh(self.bn2(self.fc2(h),test=test))  
         h = F.tanh(self.bn3(self.fc3(h),test=test))
         h = F.tanh(self.bn4(self.fc4(h),test=test))
