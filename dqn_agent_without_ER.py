@@ -8,6 +8,8 @@ import numpy as np
 import scipy.misc as spm
 import dnn_6_f
 import dnn_6_BN
+import dnn_6_new
+
 from chainer import cuda, FunctionSet, Variable, optimizers
 import chainer.functions as F
 
@@ -43,10 +45,10 @@ class DQN_class:
 
         num_of_batch = state.shape[0]
         
-        Q = self.model.Q_func(state,train=True)  # Get Q-value
+        Q = self.model.Q_func(state)  # Get Q-value
 
         # Generate Target Signals
-        tmp = self.model_target.Q_func(state_dash,train=True)  # Q(s',*)
+        tmp = self.model_target.Q_func(state_dash)  # Q(s',*)
         tmp = list(map(np.max, tmp.data))  # max_a Q(s',a)
         max_Q_dash = np.asanyarray(tmp, dtype=np.float32)
         target = np.asanyarray(Q.data, dtype=np.float32)
@@ -81,7 +83,7 @@ class DQN_class:
     
     def e_greedy(self, state, epsilon):
         
-        Q = self.model.Q_func(state,train=False)
+        Q = self.model.Q_func(state)
         Q = Q.data
 
         if np.random.rand() < epsilon:
