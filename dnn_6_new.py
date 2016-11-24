@@ -19,7 +19,7 @@ class Q_DNN(chainer.Chain):
         self.hidden_num = hidden_num
         self.num_of_actions = num_of_actions
         self.agent_state_dim = 4
-        self.market_state_dim = input_num - self.agent_state
+        self.market_state_dim = input_num - self.agent_state_dim
         super(Q_DNN, self).__init__(
             a1=L.Linear(self.agent_state_dim, 2),
             a2=L.Linear(2, 2),
@@ -36,8 +36,14 @@ class Q_DNN(chainer.Chain):
         )
         
     def Q_func(self, state):
-        agent_state = state[:, - self.agent_state_dim :]
-        market_state = state[:,:self.market_state_dim]
+        if state.ndim == 2:
+            agent_state = state[:, - self.agent_state_dim :]
+            market_state = state[:,:self.market_state_dim]
+
+        elif state.ndim == 3:
+            agent_state = state[:, :,- self.agent_state_dim :]
+            market_state = state[:,:,:self.market_state_dim]
+        
         a_state = Variable(agent_state)
         m_state = Variable(market_state)
         a = F.tanh(self.a1(a_state))

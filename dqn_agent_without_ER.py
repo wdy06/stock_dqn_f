@@ -32,7 +32,7 @@ class DQN_class:
         self.state_dimention = state_dimention
         print "Initializing DQN..."
         print "Model Building"
-        self.model = dnn_6_BN.Q_DNN(self.state_dimention,200,self.num_of_actions)
+        self.model = dnn_6_new.Q_DNN(self.state_dimention,200,self.num_of_actions)
         #self.model.to_gpu()
         
         
