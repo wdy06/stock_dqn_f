@@ -46,20 +46,20 @@ class Stock_agent():
         
         min_price = np.min(env[0])
         max_price = np.max(env[0])
-        cyfuncs.normalizationArray(env[0],min_price,max_price)
+        env[0]=cyfuncs.normalizationArray(env[0],min_price,max_price)
         
         minv = np.min(env[1])
         maxv = np.max(env[1])
-        cyfuncs.normalizationArray(env[1],minv,maxv)
+        env[1] = cyfuncs.normalizationArray(env[1],minv,maxv)
         
-        cyfuncs.normalizationArray(env[2],min_price,max_price)
-        cyfuncs.normalizationArray(env[3],min_price,max_price)
+        env[2] = cyfuncs.normalizationArray(env[2],min_price,max_price)
+        env[3]=cyfuncs.normalizationArray(env[3],min_price,max_price)
         
-        cyfuncs.normalizationArray(env[4],0,100)
-        cyfuncs.normalizationArray(env[5],0,100)
-        cyfuncs.normalizationArray(env[6],0,100)
+        env[4]=cyfuncs.normalizationArray(env[4],0,100)
+        env[5]=cyfuncs.normalizationArray(env[5],0,100)
+        env[6]=cyfuncs.normalizationArray(env[6],0,100)
         
-        cyfuncs.normalizationArray(env[7],-100,0)
+        env[7]=cyfuncs.normalizationArray(env[7],-100,0)
         
     def get_reward(self, last_action, nowprice ,buyprice):
         
@@ -310,7 +310,7 @@ class Stock_agent():
             observation = copy.deepcopy(traindata[:,i-term+1:i+1])
             #直近の期間で正規化
             self.observe_norm(observation)
-            
+
             prospect_profit = self.get_prospect_profit(self.havestock,price[i],self.ave_buyprice)
             agent_status = np.array([self.havestock,prospect_profit,self.money_ratio,self.stock_ratio])
             observation = observation.reshape(1,-1)#一次元配列に変形
@@ -397,7 +397,6 @@ class Stock_agent():
         profit_ratio = float((end_p - start_p) / start_p) * 100
         
         return profit_ratio
-        
         
 class StockMarket():
     
