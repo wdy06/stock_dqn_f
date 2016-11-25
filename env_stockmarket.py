@@ -61,6 +61,26 @@ class Stock_agent():
         
         env[7]=cyfuncs.normalizationArray(env[7],-100,0)
         
+    def observe_norm_new(self,env):
+        '''
+        env[0]: close price
+        env[1]: volume
+        env[2]: ema1
+        env[3]: ema2
+        env[4]: rsi
+        env[5]: slowk
+        env[6]: slowd
+        env[7]: wllliamR
+        '''
+        env[0]=cyfuncs.normalizationArray_new(env[0])
+        env[1]=cyfuncs.normalizationArray_new(env[1])
+        env[2]=cyfuncs.normalizationArray_new(env[2])
+        env[3]=cyfuncs.normalizationArray_new(env[3])
+        env[4]=cyfuncs.normalizationArray_new(env[4])
+        env[5]=cyfuncs.normalizationArray_new(env[5])
+        env[6]=cyfuncs.normalizationArray_new(env[6])
+        env[7]=cyfuncs.normalizationArray_new(env[7])
+        
     def get_reward(self, last_action, nowprice ,buyprice):
         
         if (last_action == 0) or (last_action == 1):
