@@ -32,7 +32,7 @@ class Evaluation():
     def eval_performance(self,model):
 
         print 'start evaluating...'
-        Agent = dqn_agent_nature.dqn_agent(gpu_id = self.gpu_id,state_dimention=1,enable_controller=self.enable_controller)
+        Agent = dqn_agent_nature.dqn_agent(gpu_id = self.gpu_id,state_dimention=10,enable_controller=self.enable_controller)
         Agent.agent_init()
         Agent.DQN.model = model
         Agent.DQN.model_to_gpu()

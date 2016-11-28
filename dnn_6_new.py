@@ -20,6 +20,8 @@ class Q_DNN(chainer.Chain):
         self.num_of_actions = num_of_actions
         self.agent_state_dim = 4
         self.market_state_dim = input_num - self.agent_state_dim
+        assert self.market_state_dim > 0
+        
         super(Q_DNN, self).__init__(
             a1=L.Linear(self.agent_state_dim, 2),
             a2=L.Linear(2, 2),
