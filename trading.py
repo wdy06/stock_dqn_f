@@ -271,12 +271,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     files = os.listdir(args.data_folder)
-    #starttime = time.time()
-    #main(files)
-    #print time.time() - starttime
-    #starttime = time.time()
-    print trading_parallel(files,proc=10)
-    #print time.time() - starttime
-    #starttime  = time.time()
-    print trading_parallel_async(files,proc=10)
-    #print time.time() - starttime
+    starttime = time.time()
+    main(files)
+    print time.time() - starttime
