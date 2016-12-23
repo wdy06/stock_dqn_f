@@ -25,6 +25,8 @@ parser.add_argument('--input_num', '-in', default=60, type=int,
                     help='input node number')
 parser.add_argument('--channel', '-c', default=8, type=int,
                     help='data channel')
+parser.add_argument('--arch', '-a', default='dnn_6_f',
+                    help='dnn architecture')
 parser.add_argument('--experiment_name', '-n', default='experiment',type=str,help='experiment name')
 parser.add_argument('--batchsize', '-B', type=int, default=1000,
                     help='replay size')
@@ -88,13 +90,13 @@ print 'enable_controller:',enable_controller
 
 start_time = time.clock()
 
-Agent = dqn_agent_nature.dqn_agent(gpu_id=args.gpu,enable_controller = enable_controller,state_dimention=args.input_num * args.channel + agent_state,batchsize=args.batchsize,historysize=args.historysize,epsilon_discount_size=args.epsilon_discount_size)
+Agent = dqn_agent_nature.dqn_agent(gpu_id=args.gpu,enable_controller = enable_controller,state_dimention=args.input_num * args.channel + agent_state,batchsize=args.batchsize,historysize=args.historysize,epsilon_discount_size=args.epsilon_discount_size,arch=args.arch)
 
 Agent.agent_init()
 
 market = env_stockmarket.StockMarket(END_TRAIN_DAY,START_TEST_DAY,u_vol=u_vol,u_ema=u_ema,u_rsi=u_rsi,u_macd=u_macd,u_stoch=u_stoch,u_wil=u_wil)
 
-evaluater = evaluation_performance.Evaluation(args.gpu,market,eval_folder,folder,args.input_num,args.action_split_number)
+evaluater = evaluation_performance.Evaluation(args.gpu,market,eval_folder,folder,args.input_num,args.action_split_number,args.arch)
 
 
 
@@ -105,6 +107,7 @@ with open(folder + 'settings.txt', 'wb') as o:
     o.write('data_folder:' + str(args.data_folder) + '\n')
     o.write('input:' + str(args.input_num) + '\n')
     o.write('channel:' + str(args.channel) + '\n')
+    o.write('arch:' + str(args.arch) + '\n')
     #o.write('hidden:' + str(model.hidden_num) + '\n')
     #o.write('layer_num:' + str(model.layer_num) + '\n')
     o.write('batchsize:' + str(args.batchsize) + '\n')

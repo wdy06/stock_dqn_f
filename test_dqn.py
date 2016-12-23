@@ -11,6 +11,7 @@ import copy
 import tools
 import matplotlib.pyplot as plt
 import numpy as np
+from tqdm import tqdm
 from chainer import cuda
 
 def trading_files(files):
@@ -25,6 +26,8 @@ parser.add_argument('--input_num', '-in', default=60, type=int,
                     help='input node number')
 parser.add_argument('--channel', '-c', default=8, type=int,
                     help='data channel')
+parser.add_argument('--arch', '-a', default='dnn_6_f',
+                    help='dnn architecture')
 parser.add_argument('--experiment_name', '-n', default='experiment',type=str,help='experiment name')
 parser.add_argument('--action_split_number', '-asn', type=int, default=2,help='how many split action')
 parser.add_argument('--online_update', '-ou', type=int, default=0,help='not use online update:0,use online update:1')
@@ -83,7 +86,7 @@ org_model = 0
 #モデルの読み込み
 #not use online update
 if args.online_update == 0:
-    Agent = dqn_agent_nature.dqn_agent(gpu_id = args.gpu,state_dimention=1,enable_controller=enable_controller)
+    Agent = dqn_agent_nature.dqn_agent(gpu_id = args.gpu,state_dimention=10,enable_controller=enable_controller,arch=args.arch)
     Agent.agent_init()
     Agent.DQN.load_model(args.model)
     Agent.policyFrozen = True
@@ -108,7 +111,7 @@ Agent.init_reward_list()
 profit_list = []
 
 
-for f in files:
+for f in tqdm(files):
     print f
     if args.online_update == 1:
         #銘柄ごとに初期化
@@ -164,4 +167,14 @@ for f in files:
     plt.savefig(filename)
     plt.close()
     
+    #histgram
+    plt.hist(profit_list,bins=10)
+    plt.title('Histgram of profit')
+    plt.xlabel('profit ratio (%)')
+    plt.ylabel('number of stocks')
+    filename = folder + "histgram.png"
+    plt.savefig(filename)
+    plt.close()
+    
 print 'average profit:', sum(profit_list)/len(profit_list)
+print 'standard deviation:', np.std(np.array(profit_list))

@@ -13,7 +13,7 @@ import talib as ta
 
 class Evaluation():
 
-    def __init__(self,gpu_id,market, target_folder,result_folder, input_num,action_split_number):
+    def __init__(self,gpu_id,market, target_folder,result_folder, input_num,action_split_number,arch):
         self.gpu_id = gpu_id
         self.market = market
         self.target_folder = target_folder
@@ -21,6 +21,7 @@ class Evaluation():
         self.result_folder = result_folder
         self.action_split_number = action_split_number
         self.enable_controller = range( - self.action_split_number,self.action_split_number + 1)
+        self.arch = arch
         
         self.train_ave_profit_list = []
         self.test_ave_profit_list = []
@@ -32,7 +33,7 @@ class Evaluation():
     def eval_performance(self,model):
 
         print 'start evaluating...'
-        Agent = dqn_agent_nature.dqn_agent(gpu_id = self.gpu_id,state_dimention=10,enable_controller=self.enable_controller)
+        Agent = dqn_agent_nature.dqn_agent(gpu_id = self.gpu_id,state_dimention=10,enable_controller=self.enable_controller,arch=self.arch)
         Agent.agent_init()
         Agent.DQN.model = model
         Agent.DQN.model_to_gpu()

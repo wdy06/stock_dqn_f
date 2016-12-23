@@ -9,9 +9,6 @@ import copy
 import pickle
 import numpy as np
 import scipy.misc as spm
-import dnn_6_f
-import dnn_6_BN
-import dnn_6_new
 
 from chainer import cuda, FunctionSet, Variable, optimizers
 import chainer.functions as F
@@ -27,10 +24,11 @@ class DQN_class:
     target_model_update_freq = 10**4  # Target update frequancy. original: 10^4
     #data_size = 10**5  # Data size of history. original: 10^6
     
-    def __init__(self, gpu_id, state_dimention,batchsize,historysize, enable_controller):
+    def __init__(self, gpu_id, state_dimention,batchsize,historysize, enable_controller,arch):
         self.gpu_id = gpu_id
         self.num_of_actions = len(enable_controller)
         self.enable_controller = enable_controller  # Default setting : "Pong"
+        self.arch = arch
         self.replay_size = batchsize
         self.data_size = historysize
         
@@ -41,7 +39,8 @@ class DQN_class:
         #        cuda.init()
 
         print "Model Building"
-        self.model = dnn_6_new.Q_DNN(self.state_dimention,200,self.num_of_actions)
+        #self.model = dnn_6_new.Q_DNN(self.state_dimention,200,self.num_of_actions)
+        self.model = self.set_model(self.arch,self.state_dimention,200,self.num_of_actions)
         self.model.to_gpu(self.gpu_id)
         
         
@@ -60,7 +59,7 @@ class DQN_class:
 
     def forward(self, state, action, Reward, state_dash, episode_end):
         num_of_batch = state.shape[0]
-
+        
         Q = self.model.Q_func(state)  # Get Q-value
 
         # Generate Target Signals
@@ -140,8 +139,11 @@ class DQN_class:
         
     
     def e_greedy(self, state, epsilon):
-        
-        Q = self.model.Q_func(state)
+        if self.arch == 'dnn_6_BN':
+            Q = self.model.Q_func(state,train=False)
+        else:
+            Q = self.model.Q_func(state)
+            
         Q = Q.data
 
         if np.random.rand() < epsilon:
@@ -182,19 +184,36 @@ class DQN_class:
         
     def model_to_gpu(self):
         self.model.to_gpu(self.gpu_id)
+    
+    def set_model(self, arch, input_num, hidden_num, output_num):
+        if arch == 'dnn_6_f':
+            import dnn_6_f
+            model =  dnn_6_f.Q_DNN(input_num,hidden_num,output_num)
+        elif arch == 'dnn_6_BN':
+            import dnn_6_BN
+            model = dnn_6_BN.Q_DNN(input_num,hidden_num,output_num)
+        elif arch == 'dnn_6_new':
+            import dnn_6_new
+            model = dnn_6_new.Q_DNN(input_num,hidden_num,output_num)
+        elif arch == 'dnn_6_hidout':
+            import dnn_6_hidout
+            model = dnn_6_hidout.Q_DNN(input_num,hidden_num,output_num)
+            
+        return model
         
 class dqn_agent():  # RL-glue Process
     #lastAction = Action()
     policyFrozen = False
     learning_freq = 2#何日ごとに学習するか
     
-    def __init__(self,gpu_id,enable_controller,state_dimention=0,batchsize=0,historysize=0,epsilon_discount_size=0):
+    def __init__(self,gpu_id,enable_controller,state_dimention=0,batchsize=0,historysize=0,epsilon_discount_size=0,arch='dnn_6_f'):
         self.gpu_id = gpu_id
         self.enable_controller = enable_controller
         self.state_dimention = state_dimention
         self.batchsize = batchsize
         self.historysize = historysize
         self.epsilon_discount_size = epsilon_discount_size
+        self.arch = arch
 
     def agent_init(self):
         # Some initializations for rlglue
@@ -208,7 +227,7 @@ class dqn_agent():  # RL-glue Process
         self.Q_recent = 0
         
         # Pick a DQN from DQN_class
-        self.DQN = DQN_class(gpu_id=self.gpu_id,state_dimention=self.state_dimention,batchsize=self.batchsize,historysize=self.historysize,enable_controller=self.enable_controller)  # default is for "Pong".
+        self.DQN = DQN_class(gpu_id=self.gpu_id,state_dimention=self.state_dimention,batchsize=self.batchsize,historysize=self.historysize,enable_controller=self.enable_controller,arch=self.arch)  # default is for "Pong".
 
     def agent_start(self, observation):
 
