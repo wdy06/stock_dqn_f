@@ -197,14 +197,13 @@ def main(files):
 
 
     meigara_count = 0
-
-
-    sum_profit_ratio_rsi = 0
-    sum_profit_ratio_macd = 0
-    sum_profit_ratio_gd = 0
-    sum_profit_ratio_stoch = 0
-    sum_profit_ratio_rsi = 0
-    sum_bh_profit_ratio = 0
+    
+    profit_ratio_rsi_list = []
+    profit_ratio_macd_list = []
+    profit_ratio_gd_list = []
+    profit_ratio_stoch_list = []
+    profit_ratio_rsi_list = []
+    bh_profit_ratio_list = []
         
 
     for f in tqdm(files):
@@ -234,35 +233,33 @@ def main(files):
             
         #buy&holdの利益率を計算
         bh_profit_ratio = float((_close[-1] - _close[0]) / _close[0]) * 100
-        sum_bh_profit_ratio += bh_profit_ratio
-        profit_ratio = trading(money,point_rsi,_close)
-        #print "RSI profit of %s is %f " % (f, profit_ratio[0])
-        sum_profit_ratio_rsi += profit_ratio[0]
+        bh_profit_ratio_list.append(bh_profit_ratio)
         
-        profit_ratio = trading(money,point_macd,_close)
-        #print "MACD profit of %s is %f " % (f, profit_ratio[0])
-        sum_profit_ratio_macd += profit_ratio[0]
+        profit_ratio = trading(money,point_rsi,_close)[0]
+        profit_ratio_rsi_list.append(profit_ratio)
         
-        profit_ratio = trading(money,point_gd,_close)
-        #print "GD profit of %s is %f " % (f, profit_ratio[0])
-        sum_profit_ratio_gd += profit_ratio[0]
+        profit_ratio = trading(money,point_macd,_close)[0]
+        profit_ratio_macd_list.append(profit_ratio)
         
-        profit_ratio = trading(money,point_stoch,_close)
-        #print "STOCH profit of %s is %f " % (f, profit_ratio[0])
-        sum_profit_ratio_stoch += profit_ratio[0]
+        profit_ratio = trading(money,point_gd,_close)[0]
+        profit_ratio_gd_list.append(profit_ratio)
+        
+        profit_ratio = trading(money,point_stoch,_close)[0]
+        profit_ratio_stoch_list.append(profit_ratio)
         
         meigara_count += 1
         #print meigara_count
         
         
         
-    print "RSI profit average is = %f" % (sum_profit_ratio_rsi / meigara_count)
-    print "MACD profit average is = %f" % (sum_profit_ratio_macd / meigara_count)
-    print "GD profit average is = %f" % (sum_profit_ratio_gd / meigara_count)
-    print "STOCH profit average is = %f" % (sum_profit_ratio_stoch / meigara_count)
-    print 'buy&hold profit = %f' % (sum_bh_profit_ratio / meigara_count)
+    print "RSI profit average is = ", sum(profit_ratio_rsi_list) / len(profit_ratio_rsi_list)
+    print "MACD profit average is = ", sum(profit_ratio_macd_list) / len(profit_ratio_macd_list)
+    print "GD profit average is = ", sum(profit_ratio_gd_list) / len(profit_ratio_gd_list)
+    print "STOCH profit average is = ", sum(profit_ratio_stoch_list) / len(profit_ratio_stoch_list)
+    print 'buy&hold profit = ', sum(bh_profit_ratio_list) / len(bh_profit_ratio_list)
     print "all meigara is %d" % meigara_count
-
+    
+    tools.listToCsv('profit_ratio_list.csv',bh_profit_ratio_list,profit_ratio_gd_list,profit_ratio_macd_list,profit_ratio_rsi_list,profit_ratio_stoch_list)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Chainer example: MNIST')
