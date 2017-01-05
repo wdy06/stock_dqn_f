@@ -167,14 +167,15 @@ for f in tqdm(files):
     plt.savefig(filename)
     plt.close()
     
-    #histgram
-    plt.hist(profit_list,bins=10)
-    plt.title('Histgram of profit')
-    plt.xlabel('profit ratio (%)')
-    plt.ylabel('number of stocks')
-    filename = folder + "histgram.png"
-    plt.savefig(filename)
-    plt.close()
+#histgram
+plt.hist(profit_list,bins=20)
+plt.title('Histgram of profit')
+plt.xlabel('profit ratio (%)')
+plt.ylabel('number of stocks')
+filename = folder + "histgram.png"
+plt.savefig(filename)
+plt.close()
+tools.listToCsv(folder+'profit_list.csv',profit_list)
     
 print 'average profit:', sum(profit_list)/len(profit_list)
 print 'standard deviation:', np.std(np.array(profit_list))
