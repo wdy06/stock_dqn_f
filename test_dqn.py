@@ -110,6 +110,7 @@ Agent.init_max_Q_list()
 Agent.init_reward_list()
 profit_list = []
 
+buysell_count_list = []
 
 for f in tqdm(files):
     print f
@@ -131,6 +132,8 @@ for f in tqdm(files):
     profit_ratio, proper, order, stocks, price, Q_list, ave_buyprice_list ,reward_list= stock_agent.trading_test(args.input_num,testprice,testdata)
     profit_list.append(profit_ratio)
     
+    #一日あたりの平均売買回数（buyとsellの数）を計算
+    buysell_count_list.append(float(len([i for i in order if i!=0]))/len(order))
     
     tools.listToCsv(folder+str(f).replace(".CSV", "")+'.csv', price, proper, order,stocks,ave_buyprice_list,reward_list)
     
@@ -179,3 +182,4 @@ tools.listToCsv(folder+'profit_list.csv',profit_list)
     
 print 'average profit:', sum(profit_list)/len(profit_list)
 print 'standard deviation:', np.std(np.array(profit_list))
+print 'average buy sell count',sum(buysell_count_list)/len(buysell_count_list)
